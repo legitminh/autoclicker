@@ -22,10 +22,12 @@ def quartz(monkeypatch):
             ("click-state", event, value)
         ),
         CGWarpMouseCursorPosition=lambda point: calls.append(("warp", point)),
+        CGEventSetTimestamp=lambda event, stamp: calls.append(("timestamp", event, stamp)),
         CGEventPost=lambda tap, event: calls.append(("post", event)),
     )
     monkeypatch.setitem(sys.modules, "Quartz", fake)
     monkeypatch.setattr(macos, "can_click", lambda: True)
+    monkeypatch.setattr(macos, "monotonic_ns", lambda: 123456789)
     return fake, calls
 
 
@@ -39,7 +41,9 @@ def test_prepared_click_does_not_post_until_dispatch(quartz):
     click()
     assert calls[2:] == [
         ("warp", (-120, 250)),
+        ("timestamp", (1, (-120, 250)), 123456789),
         ("post", (1, (-120, 250))),
+        ("timestamp", (2, (-120, 250)), 123456789),
         ("post", (2, (-120, 250))),
     ]
 

@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from time import time_ns
 
 from PySide6.QtCore import QTimer
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QPushButton
 from tzlocal import get_localzone
 
@@ -72,8 +73,9 @@ def main():
     QTimer.singleShot(200, select)
     QTimer.singleShot(5000, lambda: fail("The app did not exit after the scheduled click."))
     app.exec()
-    # Posting a native event precedes delivery; drain the queue once after quit.
-    app.processEvents()
+    # Posting a native event precedes delivery; allow the native event stream
+    # to drain after the controller quits (the target lives in this process).
+    QTest.qWait(100)
     button.close()
     if failures:
         raise SystemExit("FAIL: " + "; ".join(failures))

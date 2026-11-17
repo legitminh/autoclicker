@@ -2,6 +2,7 @@
 
 import sys
 from collections.abc import Callable
+from time import monotonic_ns
 
 
 def check_platform() -> None:
@@ -61,6 +62,9 @@ def prepare_click(x: int, y: int) -> Callable[[], None]:
             raise RuntimeError("Accessibility permission was removed. Grant it and run again.")
         Quartz.CGWarpMouseCursorPosition((x, y))
         for event in events:
+            # Prepared events may be days old. Quartz timestamps use monotonic
+            # nanoseconds, so stamp each event at dispatch rather than creation.
+            Quartz.CGEventSetTimestamp(event, monotonic_ns())
             Quartz.CGEventPost(Quartz.kCGHIDEventTap, event)
 
     return dispatch
